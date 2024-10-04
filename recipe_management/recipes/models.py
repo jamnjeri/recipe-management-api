@@ -60,6 +60,9 @@ class Recipe(models.Model):
     categories = models.ManyToManyField(Category, related_name='category_recipes')
     image = models.ImageField(upload_to='recipe/images', default='recipes/images/No-Food-Image.png', null=False, blank=False )
 
+    class Meta:
+        ordering = ['-created_date']     # Most recent first
+
     def __str__(self):
         return self.title
     

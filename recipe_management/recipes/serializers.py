@@ -6,13 +6,14 @@ class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
     class Meta:
-        model = get_user_model()
-        fields = ['id', 'username', 'email', 'password', 'date_joined']
+        model = CustomUser
+        # fields = ['id', 'username', 'email', 'password', 'date_joined']
+        fields =['id', 'username', 'password']
         read_only_fields = ['date_joined']
 
     def create(self, validated_data):
-        # Create a user with the provided data
-        user = get_user_model().objects.create_user(
+        # Create a user with the provided data. create_user ensures the password is hashed
+        user = CustomUser.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password']
@@ -27,7 +28,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
-        fields = ['name']
+        fields = ['id','name']
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     ingredient = IngredientSerializer()
@@ -50,19 +51,35 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     recipe_ingredients = RecipeIngredientSerializer(many=True)
     categories = CategorySerializer(many=True)
+    user = CustomUserSerializer(read_only=True)
 
     class Meta:
         model = Recipe
-        fields = ['id', 'title', 'description', 'instructions', 'preparation_time', 'cooking_time', 'servings', 'created_date', 'recipe_ingredients', 'categories', 'image']
+        fields = ['id', 'title', 'description', 'instructions', 'preparation_time', 'cooking_time', 'servings', 'created_date', 'recipe_ingredients', 'categories', 'image', 'user']
         
     def validate_image(self, value):
-        if not value:
+        if value is None and self.context.get('request').method in ['POST', 'PUT']:
             raise serializers.ValidationError("Image is required")
         return value
     
     def validate(self, data):
-        if 'recipe_ingredients' not in data or not data['recipe_ingredients']:
-            raise serializers.ValidationError({"recipe_ingredients": "At least one ingredient is required."})
+        errors = {}
+        # Only validate this fields in POST and PUT
+        if self.context.get('request').method in ['POST', 'PUT']:
+            # Validate title
+            if 'title' not in data or not data['title']:
+                errors['title'] = "Title is required."
+            
+            # Validate instructions
+            if 'instructions' not in data or not data['instructions']:
+                errors['instructions'] = "Instructions are required."
+            
+            # Validate ingredients
+            if 'recipe_ingredients' not in data or not data['recipe_ingredients']:
+                errors['recipe_ingredients'] = "At least one ingredient is required."
+        
+        if errors:
+            raise serializers.ValidationError(errors)
 
         return data
 

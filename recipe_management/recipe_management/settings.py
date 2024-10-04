@@ -46,6 +46,9 @@ INSTALLED_APPS = [
     'django_filters',
 ]
 
+# Custom user model
+AUTH_USER_MODEL = 'recipes.CustomUser'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -143,5 +146,5 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
+    'PAGE_SIZE': 10,      # Number of recipes per page
 }
