@@ -8,7 +8,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         # fields = ['id', 'username', 'email', 'password', 'date_joined']
-        fields =['id', 'username', 'password']
+        fields =['id', 'username','email', 'password']
         read_only_fields = ['date_joined']
 
     def create(self, validated_data):
