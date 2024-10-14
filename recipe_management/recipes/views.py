@@ -110,12 +110,24 @@ class CustomAuthToken(ObtainAuthToken):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
-        token, _= Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user_id': user.id,
-            'username': user.username,
-        })
+
+        if user:
+            user.save()
+
+            token, created= Token.objects.get_or_create(user=user)
+
+            if created:
+                print("A new token was created.")
+            else:
+                print("Token already existed.")
+
+            return Response({
+                'token': token.key,
+                'user_id': user.id,
+                'username': user.username,
+            })
+        else:
+            return Response({'error': 'Invalid credentials'}, status=400)
 
 class UserRegisterView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
