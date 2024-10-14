@@ -109,10 +109,16 @@ class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
+        # user = serializer.validated_data['user']
+
+        username = serializer.validated_data['username']
+        password = serializer.validated_data['password']
+
+        user = authenticate(username=username, password=password)
+        print("User:", user) 
 
         if not user:
-            raise AuthenticationFailed('Invalid credentials.')
+            raise Response({'error': 'Invalid credentials'}, status=400)
 
         token, created= Token.objects.get_or_create(user=user)
 
