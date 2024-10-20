@@ -7,6 +7,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from .permissions import IsRecipeOwner
 from django.contrib.auth import authenticate
+from django.db.utils import IntegrityError
+from rest_framework.exceptions import AuthenticationFailed
 
 # Create your views here.
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -108,25 +110,27 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        # user = serializer.validated_data['user']
+        username = request.data.get('username')
+        password = request.data.get('password')
 
-        username = serializer.validated_data['username']
-        password = serializer.validated_data['password']
+        if not username or not password:
+            raise Response({'error': 'Username and password are required'}, status=400)
 
         user = authenticate(username=username, password=password)
-        print("User:", user) 
 
-        if not user:
-            raise Response({'error': 'Invalid credentials'}, status=400)
-
-        token, created= Token.objects.get_or_create(user=user)
-
-        if created:
-            print("A new token was created.")
-        else:
-            print("Token already existed.")
+        if user is None:
+            # Check if user exists
+            if CustomUser.objects.filter(username=username).exists():
+                return Response({'error': 'Incorrect password'}, status=400)
+            else:
+                return Response({'error': 'User not found'}, status=400)
+            
+        # If user is authenticated, get or create the token
+        try:
+            token, created = Token.objects.get_or_create(user=user)
+        except IntegrityError as e:
+            # Handle any issues that occur during token creation
+            return Response({'error': 'Error creating token'}, status=500)
 
         return Response({
             'token': token.key,
