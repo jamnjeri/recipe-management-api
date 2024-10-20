@@ -130,6 +130,7 @@ class CustomAuthToken(ObtainAuthToken):
             token, created = Token.objects.get_or_create(user=user)
         except IntegrityError as e:
             # Handle any issues that occur during token creation
+            print("Token creation error:", e)
             return Response({'error': 'Error creating token'}, status=500)
 
         return Response({
